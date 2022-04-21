@@ -5,5 +5,6 @@ Usage:
 ```
 setup your dependencies.json file (see example in repo)
 
+from command line:
 python build-datapack.py <datapack>/dependencies.json
 ```
