@@ -1,0 +1,50 @@
+{
+  # This is a list of protected namespaces that should not be cleaned.
+  # Files in these namespaces will be deleted and replaced only when a new file exsits,
+  # instead of deleting the entire namespace ahead of time.
+  # This may leave dangleing files if libraries using these spaces rename or remove files.
+  "namespaces": [
+    "test_pack",
+    "minecraft"
+  ],
+  # A list of dependencies to install
+  "dependencies": [
+    {
+	  # The name of the dependency. Mostely for you own identification purposes.
+      "name": "Lantern Load",
+	  # URL to download the dependency. Can be a github repo, or a zip file.
+	  # If you need a specific version instead of the latest, you will need to get the zip file link.
+      "url": "https://github.com/LanternMC/load"
+    },
+    {
+      "name": "ChunkScan",
+      "url": "https://github.com/ICY105/ChunkScan"
+    },
+    {
+	  # Here is an example dependency that depends on another dependency (ChunkScan)
+      "name": "ChunkScan.Ores",
+      "url": "https://github.com/ICY105/ChunkScan.Ores"
+    },
+    {
+      "name": "Smithed Crafting",
+      "url": "https://github.com/Smithed-MC/Libraries",
+	  # The path value is optional and indicates where to start looking for the datapack.
+	  # Needed for monorepos of multiple datapacks to choose which one will be installed.
+      "path": "libs/crafter"
+    }
+  ],
+  # A list of functions to append to function tags, after building has occured.
+  # Existing function tags will be removed and replaced, so this an automate appending your functions.
+  "append_function_tags": [
+    {
+	  # Function tag to append to (no '#')
+      "tag": "load:load",
+	  # Value to append ('#' is accepted)
+      "value": "test_pack:load"
+    },
+    {
+      "tag": "chunk_scan:v2/generate",
+      "value": "test_pack:generate"
+    }
+  ]
+}
