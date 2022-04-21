@@ -10,10 +10,10 @@
   # A list of dependencies to install
   "dependencies": [
     {
-	  # The name of the dependency. Mostely for you own identification purposes.
+      # The name of the dependency. Mostely for you own identification purposes.
       "name": "Lantern Load",
-	  # URL to download the dependency. Can be a github repo, or a zip file.
-	  # If you need a specific version instead of the latest, you will need to get the zip file link.
+      # URL to download the dependency. Can be a github repo, or a zip file.
+      # If you need a specific version instead of the latest, you will need to get the zip file link.
       "url": "https://github.com/LanternMC/load"
     },
     {
@@ -21,25 +21,25 @@
       "url": "https://github.com/ICY105/ChunkScan"
     },
     {
-	  # Here is an example dependency that depends on another dependency (ChunkScan)
+      # Here is an example dependency that depends on another dependency (ChunkScan)
       "name": "ChunkScan.Ores",
       "url": "https://github.com/ICY105/ChunkScan.Ores"
     },
     {
       "name": "Smithed Crafting",
       "url": "https://github.com/Smithed-MC/Libraries",
-	  # The path value is optional and indicates where to start looking for the datapack.
-	  # Needed for monorepos of multiple datapacks to choose which one will be installed.
+      # The path value is optional and indicates where to start looking for the dependency.
+      # Needed for repos with multiple datapacks to determine which to install
       "path": "libs/crafter"
     }
   ],
   # A list of functions to append to function tags, after building has occured.
-  # Existing function tags will be removed and replaced, so this an automate appending your functions.
+  # Existing function tags will be removed and replaced, so this automates appending your functions.
   "append_function_tags": [
     {
-	  # Function tag to append to (no '#')
+      # Function tag to append to (no '#')
       "tag": "load:load",
-	  # Value to append ('#' is accepted)
+      # Value to append ('#' is accepted)
       "value": "test_pack:load"
     },
     {
