@@ -8,7 +8,7 @@ import shutil
 from zipfile import ZipFile
 from urllib.request import urlretrieve
 
-logging.basicConfig(level=logging.WARNING, stream=sys.stdout)
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger()
 
 def get_dependencies(dependencies):
@@ -22,25 +22,39 @@ def get_dependencies(dependencies):
         os.mkdir('.cache')
 
     for dependency in dependencies:
-        url = dependency["url"]
-        extensions = ['']
-        success = False
-        if 'github.com' in url and not url.endswith('.zip'):
-            extensions.append('/archive/master.zip')
-            extensions.append('/archive/main.zip')
+        dst_path = f'.cache/{dependency["name"]}'
+        dst_zip = dst_path+'.zip'
 
-        for ext in extensions:
-            try:
-                download_path = f'.cache/{dependency["name"]}.zip'
+        if 'local' in dependency:
+            src_path = dependency['local']
+            if os.path.isdir(src_path):
+                shutil.copytree(src_path, dst_path)
+            elif zipfile.is_zipfile(src_path):
+                shutil.copyfile(src_path, dst_zip)
+                with ZipFile(dst_zip) as f:
+                    logger.info(f'extracting {dst_zip}')
+                    f.extractall(dst_path)
+        elif 'url' in dependency:
+            url = dependency["url"]
+            extensions = ['']
+            success = False
+            if 'github.com' in url and not url.endswith('.zip'):
+                extensions.append('/archive/master.zip')
+                extensions.append('/archive/main.zip')
+
+            for ext in extensions:
                 logger.info(f'Attempting to retrieve {dependency["name"]} from {url+ext}')
-                urlretrieve(url+ext, download_path)
-                if zipfile.is_zipfile(download_path):
+                urlretrieve(url+ext, dst_zip)
+                if zipfile.is_zipfile(dst_zip):
+                    with ZipFile(dst_zip) as f:
+                        logger.info(f'extracting {dst_zip}')
+                        f.extractall(dst_path)
                     success = True
                     break
-            except Exception as e:
-                pass
-        if not success:
-            raise RuntimeError(f'Failed to retrieve dependency {dependency["name"]}. Check the url and try again.')
+            if not success:
+                raise RuntimeError(f'Failed to retrieve dependency {dependency["name"]}. Check the url and try again.')
+        else:
+            raise RuntimeError(f'{dependency["name"]} does not have a url or path field.')
 
 def install_dependencies(install_path, namespaces, dependencies):
     if isinstance(namespaces, str):
@@ -49,10 +63,6 @@ def install_dependencies(install_path, namespaces, dependencies):
     cleaned_files = []
     for dependency in dependencies:
         path = f'.cache/{dependency["name"]}'
-        with ZipFile(f'{path}.zip') as f:
-            logger.info(f'extracting {path}.zip')
-            f.extractall(path)
-
         dp_path = path
         if 'path' in dependency and len(dependency['path']) > 0:
             dp_path = path + '/' + dependency['path']
@@ -190,4 +200,4 @@ if __name__ == "__main__":
     try:
         main(path)
     except Exception as e:
-        logger.exception(e)
+        logger.error(e)

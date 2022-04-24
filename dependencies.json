@@ -17,8 +17,10 @@
       "url": "https://github.com/LanternMC/load"
     },
     {
+      # local specifies a path to copy the library from locally instead of downloading it,
+      # relitive to where the python script is run. Can handle zip files and folders.
       "name": "ChunkScan",
-      "url": "https://github.com/ICY105/ChunkScan"
+      "local": "libraries/chunk_scan.zip"
     },
     {
       # Here is an example dependency that depends on another dependency (ChunkScan)
