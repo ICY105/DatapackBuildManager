@@ -5,8 +5,11 @@ As with any tool that could potentially destroy your project, please take backup
 
 Usage:
 ```
-setup your dependencies.json file (see example in repo)
+Setup your dependencies.json file (see example in repo)
 
-from command line:
-python build-datapack.py <datapack>/dependencies.json
+Run this from command line for basic operation:
+    python build-datapack.py <datapack>
+
+For advanced operation, add -h to see flags:
+    python build-datapack.py -h
 ```

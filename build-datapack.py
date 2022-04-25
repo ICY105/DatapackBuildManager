@@ -17,7 +17,7 @@ build-datapack.py will install dependencies into a datapack based on a provided
 dependencies.json file (see git repo for reference). This file goes in the
 same folder as your pack.mcmeta.
 
-Ussage:
+Usage:
     build-datapack.py <path> <flags...>
 
 Path:
