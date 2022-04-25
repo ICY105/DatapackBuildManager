@@ -8,10 +8,35 @@ import shutil
 from zipfile import ZipFile
 from urllib.request import urlretrieve
 
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+logging.basicConfig(level=logging.WARNING, stream=sys.stdout)
 logger = logging.getLogger()
 
+file_name = 'dependencies.json'
+help_text="""
+build-datapack.py will install dependencies into a datapack based on a provided
+dependencies.json file (see git repo for reference). This file goes in the
+same folder as your pack.mcmeta.
+
+Ussage:
+    build-datapack.py <path> <flags...>
+
+Path:
+    Accepts top-level datapack path, or path to dependencies.json
+
+Flags:
+    -h --help: prints this message
+    -c --clean: removes installed dependencies without re-installing them. 
+                It's recommended to run this before removing a dependency.
+    -l --local: skips grabbing step, building from anything left in the cache
+    -t --no-tags: skips appending function tags step
+"""
+
 def get_dependencies(dependencies):
+    """
+    Copies dependency files into the .cache directory, downloading from a url
+    if needed and extracts zip files.
+    :param dependencies: list of dependencies to install, from dependencies.json
+    """
     if os.path.isdir('.cache'):
         logger.info(f'clearing .cache')
         files = glob.glob('.cache/*.zip')
@@ -31,9 +56,6 @@ def get_dependencies(dependencies):
                 shutil.copytree(src_path, dst_path)
             elif zipfile.is_zipfile(src_path):
                 shutil.copyfile(src_path, dst_zip)
-                with ZipFile(dst_zip) as f:
-                    logger.info(f'extracting {dst_zip}')
-                    f.extractall(dst_path)
         elif 'url' in dependency:
             url = dependency["url"]
             extensions = ['']
@@ -46,9 +68,6 @@ def get_dependencies(dependencies):
                 logger.info(f'Attempting to retrieve {dependency["name"]} from {url+ext}')
                 urlretrieve(url+ext, dst_zip)
                 if zipfile.is_zipfile(dst_zip):
-                    with ZipFile(dst_zip) as f:
-                        logger.info(f'extracting {dst_zip}')
-                        f.extractall(dst_path)
                     success = True
                     break
             if not success:
@@ -56,11 +75,17 @@ def get_dependencies(dependencies):
         else:
             raise RuntimeError(f'{dependency["name"]} does not have a url or path field.')
 
-def install_dependencies(install_path, namespaces, dependencies):
-    if isinstance(namespaces, str):
-        namespaces = [namespaces]
-    cleaned_dirs = []
-    cleaned_files = []
+        if zipfile.is_zipfile(dst_zip):
+            with ZipFile(dst_zip) as f:
+                logger.info(f'extracting {dst_zip}')
+                f.extractall(dst_path)
+
+def find_dp_paths(dependencies):
+    """
+    Locates the '/data' folder for dependencies.
+    :param dependencies: list of dependencies from dependencies.json
+    """
+    paths = []
     for dependency in dependencies:
         path = f'.cache/{dependency["name"]}'
         dp_path = path
@@ -89,9 +114,24 @@ def install_dependencies(install_path, namespaces, dependencies):
                         queue.append(new_path)
 
         if not found_directory:
-            raise RuntimeError(f'failed to locate data directory at {dp_path}')
-        logger.info(f'located data directory at {dp_path}')
+            raise RuntimeError(f"failed to locate '/data' directory at {dp_path}")
 
+        logger.info(f'located data directory at {dp_path}')
+        paths.append(dp_path)
+    return paths
+
+def clean_dependencies(dp_paths, install_path, namespaces):
+    """
+    Removes existing dependencies at install location
+    :param dp_paths: list of paths to copy from
+    :param install_path: path to copy to
+    :namespaces: list of protected namespaces
+    """
+    if isinstance(namespaces, str):
+        namespaces = [namespaces]
+    cleaned_dirs = []
+    
+    for dp_path in dp_paths:
         top_dirs = os.listdir(dp_path)
         for dir in top_dirs:
             clean_path = install_path + '/' + dir
@@ -99,7 +139,20 @@ def install_dependencies(install_path, namespaces, dependencies):
                 logger.info(f'cleaning {clean_path}')
                 shutil.rmtree(clean_path)
                 cleaned_dirs.append(dir)
-        
+
+def install_dependencies(dp_paths, install_path, namespaces):
+    """
+    Installs dependencies by copying files and merging where pratical
+    :param dp_paths: list of paths to copy from
+    :param install_path: path to copy to
+    :namespaces: list of protected namespaces
+    """
+    if isinstance(namespaces, str):
+        namespaces = [namespaces]
+    cleaned_files = []
+    
+    for dp_path in dp_paths:
+        top_dirs = os.listdir(dp_path)
         for dir in top_dirs:
             files = glob.glob('**/*.*', recursive=True, root_dir=f'{dp_path}/{dir}')
             for f in files:
@@ -112,35 +165,31 @@ def install_dependencies(install_path, namespaces, dependencies):
                         os.remove(dst_path)
                         copy_file(src_path, dst_path)
                     elif src_path.endswith('.json'):
-                        merge_function_tags(src_path, dst_path)
+                        merge_tag_files(src_path, dst_path)
                     else:
                         logger.warning(f'File {dst_path} already exists. Skipping.')
                 elif os.path.isfile(src_path):
                     copy_file(src_path, dst_path)
 
-def append_function_tags(dir_path, tags):
+def append_tag_files(dir_path, tags):
+    """
+    Appends provided values to tags.
+    :param dir_path: path of '/data' folder containing tags
+    :param tags: list of tag:value pairs from dependencies.json
+    """
     if tags is None:
         return
     
     for tag in tags:
         split = tag['tag'].split(':')
         path = f'{dir_path}/{split[0]}/tags/functions/{split[1]}.json'
-        merge_into_function_tag(path, tag['value'])
-    
-def get_optional(dict, entry):
-    if entry in dict:
-        return dict[entry]
-    else:
-        return None
+        append_tag_file(path, tag['value'])
 
-def copy_file(src, dst):
-    try:
-        os.makedirs(os.path.dirname(dst), exist_ok=True)
-        shutil.copyfile(src, dst)
-    except PermissionError:
-        logger.warning(f'Failed to copy file {src} to {dst} - PermissionError')
-
-def merge_function_tags(src, dst):
+def merge_tag_files(src, dst):
+    """ Appends a single line value to a tag
+        :param path: file to append (must be a tag file, like function tags)
+        :param value: value to append (example, 'my_datapack:load')
+    """
     logger.info(f'merging {src} into {dst}')
     assert os.path.isfile(src) and os.path.isfile(dst) and src != dst
     merge = ''
@@ -155,7 +204,11 @@ def merge_function_tags(src, dst):
     with open(dst, 'w') as f_dst:
         f_dst.write(merge)
 
-def merge_into_function_tag(path, value):
+def append_tag_file(path, value):
+    """ Appends a single line value to a tag
+        :param path: file to append (must be a tag file, like function tags)
+        :param value: value to append (example, 'my_datapack:load')
+    """
     logger.info(f'merging {value} into {path}')
     assert os.path.isfile(path)
     merge = ''
@@ -166,38 +219,61 @@ def merge_into_function_tag(path, value):
         merge = json.dumps(contents)
     with open(path, 'w') as f_dst:
         f_dst.write(merge)
+    
+def get_optional(dict, entry):
+    if entry in dict:
+        return dict[entry]
+    else:
+        return None
+
+def copy_file(src, dst):
+    try:
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        shutil.copyfile(src, dst)
+    except PermissionError:
+        logger.warning(f'Failed to copy file {src} to {dst} - PermissionError')
+
+def has_tag(short, long):
+    return short in sys.argv or long in sys.argv
 
 def main(path):
-    try:
-        file = open(path, 'r')
-    except:
-        print(f'Unable to locate file {path}')
-        return
-    
-    dependencies_json = json.loads(file.read())
-    logger.debug(f'dependencies file: {dependencies_json}')
+    with open(f'{path}/{file_name}', 'r') as f:
+        dependencies_json = json.loads(f.read())
+        logger.debug(f'dependencies file: {dependencies_json}')
+        dir_path = path[:path.rfind('/')] + '/data'
 
-    print('Attempting to download dependencies...')
-    get_dependencies(dependencies_json['dependencies'])
-    print('All dependencies successfully downloaded.')
+        # Step 1: copy/download/extract dependencies to cache
+        if not has_tag('-l', '--local'):
+            print('Grabbing dependencies...')
+            get_dependencies(dependencies_json['dependencies'])
 
-    print('Installing dependencies...')
-    dir_path = path[:path.rfind('/')] + '/data'
-    install_dependencies(dir_path, get_optional(dependencies_json, 'namespaces'), dependencies_json['dependencies'])
-    print('All dependencies installed.')
+        # Step 2: find dependency datapack paths
+        dependency_paths = find_dp_paths(dependencies_json['dependencies'])
 
-    print('Appending function tags...')
-    append_function_tags(dir_path, get_optional(dependencies_json,'append_function_tags'),)
-    print('Finished. Build successful.')
+        # Step 3: clean existing dependencies
+        print('Cleaning dependencies...')
+        clean_dependencies(dependency_paths, dir_path, get_optional(dependencies_json, 'namespaces'))
+
+        if not has_tag('-c', '--clean'):
+            # Step 4: install dependencies
+            print('Installing dependencies...')
+            install_dependencies(dependency_paths, dir_path, get_optional(dependencies_json, 'namespaces'))
+
+            # Step 5: Append to function tags
+            if not has_tag('-t', '--no-tags'):
+                print('Appending function tags...')
+                append_tag_files(dir_path, get_optional(dependencies_json,'append_function_tags'))
+
+        print('Finished. Build successful.')
 
 if __name__ == "__main__":
-    if len(sys.argv) == 1:
-        path = "dependencies.json"
+    if has_tag('-h', '--help') or len(sys.argv) == 1:
+        print(help_text)
     else:
         path = sys.argv[1]
-        if not path.endswith("dependencies.json"):
-            path += "/dependencies.json"
-    try:
-        main(path)
-    except Exception as e:
-        logger.error(e)
+        if path.endswith(file_name):
+            path = path[:-len(file_name)]
+        try:
+            main(path)
+        except Exception as e:
+            logger.error(e)
