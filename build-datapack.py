@@ -8,7 +8,7 @@ import shutil
 from zipfile import ZipFile
 from urllib.request import urlretrieve
 
-logging.basicConfig(level=logging.WARNING, stream=sys.stdout)
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger()
 
 file_name = 'dependencies.json'
@@ -24,11 +24,13 @@ Path:
     Accepts top-level datapack path, or path to dependencies.json
 
 Flags:
-    -h --help: prints this message
-    -c --clean: removes installed dependencies without re-installing them. 
-                It's recommended to run this before removing a dependency.
-    -l --local: skips grabbing step, building from anything left in the cache
-    -t --no-tags: skips appending function tags step
+    -h --help:              prints this message
+    -c --clean:             removes installed dependencies without re-installing them.
+                            It's recommended to run this before removing a dependency.
+    -l --local:             skips grabbing step, building from anything left in the cache
+    -t --no-tags:           skips appending function tags step
+    -u --upgrade <version>: For use in versioned libararies. Finds & replaces version string
+                            in dependencies.json with the provided string.
 """
 
 def get_dependencies(dependencies):
@@ -127,10 +129,7 @@ def clean_dependencies(dp_paths, install_path, namespaces):
     :param install_path: path to copy to
     :namespaces: list of protected namespaces
     """
-    if isinstance(namespaces, str):
-        namespaces = [namespaces]
     cleaned_dirs = []
-    
     for dp_path in dp_paths:
         top_dirs = os.listdir(dp_path)
         for dir in top_dirs:
@@ -140,6 +139,37 @@ def clean_dependencies(dp_paths, install_path, namespaces):
                 shutil.rmtree(clean_path)
                 cleaned_dirs.append(dir)
 
+def update_version(dp_path, old_ver, new_ver, namespaces):
+    """
+    Removes existing dependencies at install location
+    :param dp_paths: list of paths to copy from
+    :param install_path: path to copy to
+    :namespaces: list of protected namespaces
+    """
+    if len(namespaces) == 0:
+        queue = [dp_path]
+    else:
+        queue = []
+        for namespace in namespaces:
+            queue.append(f'{dp_path}/{namespace}')
+
+    while len(queue) > 0:
+        current_path = queue[0]
+        queue.remove(queue[0])
+
+        for f in os.listdir(current_path):
+            new_path = f'{current_path}/{f}'
+            if old_ver in f:
+                f = f.replace(old_ver, new_ver, 1)
+                os.rename(new_path, f'{current_path}/{f}')
+                logger.info(f'Renamed {new_path} to {current_path}/{f}')
+                new_path = f'{current_path}/{f}'
+
+            if os.path.isdir(new_path):
+                queue.append(new_path)
+            elif os.path.isfile(new_path):
+                replace_file_contents(new_path, old_ver, new_ver)
+
 def install_dependencies(dp_paths, install_path, namespaces):
     """
     Installs dependencies by copying files and merging where pratical
@@ -147,10 +177,7 @@ def install_dependencies(dp_paths, install_path, namespaces):
     :param install_path: path to copy to
     :namespaces: list of protected namespaces
     """
-    if isinstance(namespaces, str):
-        namespaces = [namespaces]
     cleaned_files = []
-    
     for dp_path in dp_paths:
         top_dirs = os.listdir(dp_path)
         for dir in top_dirs:
@@ -236,35 +263,73 @@ def copy_file(src, dst):
 def has_tag(short, long):
     return short in sys.argv or long in sys.argv
 
+def replace_file_contents(path, old_str, new_str):
+    with open(path, 'r') as f:
+        contents = f.read()
+    contents = contents.replace(old_str, new_str)
+    with open(path, 'w') as f:
+        f.write(contents)
+
 def main(path):
     with open(f'{path}/{file_name}', 'r') as f:
         dependencies_json = json.loads(f.read())
         logger.debug(f'dependencies file: {dependencies_json}')
-        dir_path = path[:path.rfind('/')] + '/data'
+    dir_path = path[:path.rfind('/')] + '/data'
+    if not os.path.isdir(dir_path):
+        raise RuntimeError("Datapack does not have a '/data' directory")
 
-        # Step 1: copy/download/extract dependencies to cache
-        if not has_tag('-l', '--local'):
-            print('Grabbing dependencies...')
-            get_dependencies(dependencies_json['dependencies'])
+    dependencies = get_optional(dependencies_json, 'dependencies')
+    if dependencies is None:
+        raise ValueError('Missing dependencies field in dependencies.json')
 
-        # Step 2: find dependency datapack paths
-        dependency_paths = find_dp_paths(dependencies_json['dependencies'])
+    namespaces = get_optional(dependencies_json, 'namespaces')
+    if namespaces is None:
+        namespaces = []
+    elif isinstance(namespaces, str):
+        namespaces = [namespaces]
 
-        # Step 3: clean existing dependencies
-        print('Cleaning dependencies...')
-        clean_dependencies(dependency_paths, dir_path, get_optional(dependencies_json, 'namespaces'))
+    version = get_optional(dependencies_json, 'version')
 
-        if not has_tag('-c', '--clean'):
-            # Step 4: install dependencies
-            print('Installing dependencies...')
-            install_dependencies(dependency_paths, dir_path, get_optional(dependencies_json, 'namespaces'))
+    # Step 1: copy/download/extract dependencies to cache
+    if not has_tag('-l', '--local'):
+        print('Grabbing dependencies...')
+        get_dependencies(dependencies)
 
-            # Step 5: Append to function tags
-            if not has_tag('-t', '--no-tags'):
-                print('Appending function tags...')
-                append_tag_files(dir_path, get_optional(dependencies_json,'append_function_tags'))
+    # Step 2: find dependency datapack paths
+    dependency_paths = find_dp_paths(dependencies)
 
-        print('Finished. Build successful.')
+    # Step 3: clean existing dependencies
+    print('Cleaning dependencies...')
+    clean_dependencies(dependency_paths, dir_path, namespaces)
+
+    # Step 4: upgrade version (if flag is used)
+    if has_tag('-u', '--upgrade'):
+        if version is None:
+            raise RuntimeError('Specify current version in dependencies.json to upgrade.')
+        try:
+            new_version = sys.argv[sys.argv.index('-u')+1]
+        except ValueError:
+            new_version = sys.argv[sys.argv.index('--upgrade')+1]
+        if version == new_version:
+            logger.warning('Current and target version match, skipping upgrade step.')
+        else:
+            print(f'Upgrading form {version} to {new_version}...')
+            update_version(dir_path, version, new_version, namespaces)
+            dependencies_json['version'] = new_version
+            with open(f'{path}/{file_name}', 'w') as f:
+                f.write(json.dumps(dependencies_json, indent=2))
+
+    if not has_tag('-c', '--clean'):
+        # Step 5: install dependencies
+        print('Installing dependencies...')
+        install_dependencies(dependency_paths, dir_path, namespaces)
+
+        # Step 6: Append to function tags
+        if not has_tag('-t', '--no-tags'):
+            print('Appending function tags...')
+            append_tag_files(dir_path, get_optional(dependencies_json,'append_function_tags'))
+
+    print('Finished. Build successful.')
 
 if __name__ == "__main__":
     if has_tag('-h', '--help') or len(sys.argv) == 1:

@@ -48,5 +48,7 @@
       "tag": "chunk_scan:v2/generate",
       "value": "test_pack:generate"
     }
-  ]
+  ],
+  # Optional: Current datapack version. When using --upgrade flag, this is the version that gets replaced.
+  "version":"v1.0"
 }
