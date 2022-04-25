@@ -29,7 +29,7 @@ Flags:
                             It's recommended to run this before removing a dependency.
     -l --local:             skips grabbing step, building from anything left in the cache
     -t --no-tags:           skips appending function tags step
-    -u --upgrade <version>: For use in versioned libararies. Finds & replaces version string
+    -u --upgrade <version>: For use in versioned libraries. Finds & replaces version string
                             in dependencies.json with the provided string.
 """
 
