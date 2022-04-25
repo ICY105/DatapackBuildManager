@@ -8,7 +8,7 @@ import shutil
 from zipfile import ZipFile
 from urllib.request import urlretrieve
 
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+logging.basicConfig(level=logging.WARNING, stream=sys.stdout)
 logger = logging.getLogger()
 
 file_name = 'dependencies.json'
@@ -316,6 +316,9 @@ def main(path):
             print(f'Upgrading form {version} to {new_version}...')
             update_version(dir_path, version, new_version, namespaces)
             dependencies_json['version'] = new_version
+            for tag in dependencies_json['append_function_tags']:
+                tag['tag'] = tag['tag'].replace(version, new_version)
+                tag['value'] = tag['value'].replace(version, new_version)
             with open(f'{path}/{file_name}', 'w') as f:
                 f.write(json.dumps(dependencies_json, indent=2))
 
