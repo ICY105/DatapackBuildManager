@@ -274,7 +274,7 @@ def main(path):
     with open(f'{path}/{file_name}', 'r') as f:
         dependencies_json = json.loads(f.read())
         logger.debug(f'dependencies file: {dependencies_json}')
-    dir_path = path[:path.rfind('/')] + '/data'
+    dir_path = path + '/data'
     if not os.path.isdir(dir_path):
         raise RuntimeError("Datapack does not have a '/data' directory")
 
