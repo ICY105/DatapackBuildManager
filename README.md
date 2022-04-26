@@ -39,7 +39,7 @@ Library | Author | Description | Versioned | Note
 [NBT Crafting API](https://github.com/BigPapi13/NBT-Crafting-API) | BigPapi13 | Implements a system to access the NBT of items in the vanilla crafting table. Only works on unstackable items, and cannot affect output. | No |
 [Player Action](https://github.com/ICY105/PlayerAction) | ICY105 | Provides hooks for various player actions, including click detection. | Yes |
 [Player DB](https://github.com/rx-modules/PlayerDB) | rx | Implements an efficient system for storing and retrieving per-player data in storage. | Yes |
-[QCB](https://github.com/Ellivers/QCB) | Ellivers | Adds a common cross-datapack soloution to remove barrel opening sounds from custom blocks without using /stopsound. | Static |
+[QCB](https://github.com/Ellivers/QCB) | Ellivers | Adds a common cross-datapack soloution to remove barrel opening sounds from custom blocks without using /stopsound. | No |
 [Random](https://github.com/Aeldrion/Minecraft-Random) | Aeldrion | Provides a variety of random number generators. | No |
 [Ray Collision Detector](https://github.com/K-bai/Minecraft-Ray-Collision-Detector) | K-bai | A precise ray-marching system to locate blocks. | No |
 [Score Based Damage](https://github.com/ErrorCraft/Score-Based-Damage) | ErrorCraft | Adds a system for damaging players using attributes | No |
