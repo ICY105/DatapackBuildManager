@@ -22,7 +22,7 @@ For advanced operation, add -h to see flags:
 # Known Libraries
 These are datapack libraries that work with DatapackBuildManager. If you know of a library that should be on this list, please contact me.
 
-'Versioned' libraries are formatted such that if an end-user is using multiple datapacks implementing that library, they will not conflict. In most cases unversioned libraries won't cause problems, but can cause conflicts. 'Static' libraries are unversioned, but are intended to never change so they can't cause conlicts.
+If an end-user has several datapacks that use different versions of a library, the conflicting versions overwrite each other and can cause issues. 'Versioned' libraries are formatted to prevent this problem by preventing files from being overwritten and ensuring the latest version of the library is used. 'Static' libraries are unversioned, but are intended to never change so they can't cause conlicts.
 
 Library | Author | Description | Versioned | Note
 --------|--------|-------------|-----------|-----
