@@ -35,7 +35,7 @@ Library | Author | Description | Versioned | Note
 [Iris](https://github.com/Aeldrion/Iris) | Aeldrion | An extremely precise system for determing what block a player is looking at. | No |
 [Lantern Load](https://github.com/LanternMC/load) | LanternMC | A common system for controlling load order. This is the basis of most libraries, and all versioned libraries. | Static | Usually you do not need to add this explicitly, any datapack depending on LanternLoad will implement it themselves.
 [Loottable Autosmelt](https://github.com/ICY105/LoottableAutosmelt) | ICY105 | Adds loot-table based tool abilities like autosmelt and void. | No | Extensive loot table modifications can cause incompatibilies between libraries.
-[LTOS](https://github.com/gibbsly/ltos) | gibbsly | A utility to reliably determine who broke a block and what was broken. | No | Extensive loot table modifications can cause incompatibilies between libraries. Not properly versioned.
+[LTOS](https://github.com/gibbsly/ltos) | gibbsly | A utility to reliably determine who broke a block and what was broken. | No | Extensive loot table modifications can cause incompatibilies between libraries.
 [NBT Crafting API](https://github.com/BigPapi13/NBT-Crafting-API) | BigPapi13 | Implements a system to access the NBT of items in the vanilla crafting table. Only works on unstackable items, and cannot affect output. | No |
 [Player Action](https://github.com/ICY105/PlayerAction) | ICY105 | Provides hooks for various player actions, including click detection. | Yes |
 [Player DB](https://github.com/rx-modules/PlayerDB) | rx | Implements an efficient system for storing and retrieving per-player data in storage. | Yes |
