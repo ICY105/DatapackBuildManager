@@ -227,7 +227,7 @@ def merge_tag_files(src, dst):
             for entry in src_contents['values']:
                 if entry not in dst_contents['values']:
                     dst_contents['values'].append(entry)
-            merge = json.dumps(dst_contents)
+            merge = json.dumps(dst_contents, indent=2)
     with open(dst, 'w') as f_dst:
         f_dst.write(merge)
 
@@ -313,7 +313,7 @@ def main(path):
         if version == new_version:
             logger.warning('Current and target version match, skipping upgrade step.')
         else:
-            print(f'Upgrading form {version} to {new_version}...')
+            print(f'Upgrading from {version} to {new_version}...')
             update_version(dir_path, version, new_version, namespaces)
             dependencies_json['version'] = new_version
             for tag in dependencies_json['append_function_tags']:
