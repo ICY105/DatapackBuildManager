@@ -243,7 +243,7 @@ def append_tag_file(path, value):
         contents = json.loads(f.read())
         if value not in contents['values']:
             contents['values'].append(value)
-        merge = json.dumps(contents)
+        merge = json.dumps(contents, indent=2)
     with open(path, 'w') as f_dst:
         f_dst.write(merge)
     
