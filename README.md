@@ -27,7 +27,7 @@ Library | Author | Description | Note
 [AESTD](https://github.com/Aeldrion/AESTD) | Aeldrion | A 'common library' of useful entity tags, block tags, item tags, entity tags, predicates, and other useful stuff | Not properly versioned. Multiple datapacks implementing this library may cause conflicts.
 [Block Utils](https://github.com/ICY105/BlockUtils) | ICY105 | Adds various utilities for interacting with blocks. Currently limited to detecting redstone power. |
 [ChunkScan](https://github.com/ICY105/ChunkScan) | ICY105 | Adds a post-gen chunk scaning system. Supports any dimension (including custom), custom worldheights, and is compatible with other worldgen systems, both normal and postgen. |
-[ChunkScan.Ores](https://github.com/ICY105/ChunkScan.Ores) | Adds a custom ore generation system built on ChunkScan. Supports any dimension (including custom) and biome filtering. | Requires ChunkScan |
+[ChunkScan.Ores](https://github.com/ICY105/ChunkScan.Ores) | ICY105 | Adds a custom ore generation system built on ChunkScan. Supports any dimension (including custom) and biome filtering. | Requires ChunkScan |
 [Datapack Energy](https://github.com/ICY105/DatapackEnergy) | ICY105 | Adds a robust and optimized energy transfer system for Tech datapacks adding machines. |
 [Get Shape Util](https://github.com/asd988/getshape_util) | asd988 | Provides a system for getting the shape of most blocks. | Not properly versioned. Multiple datapacks implementing this library may cause conflicts.
 [Iris](https://github.com/Aeldrion/Iris) | Aeldrion | An extremely precise system for determing what block a player is looking at. | Not properly versioned. Multiple datapacks implementing this library may cause conflicts.
