@@ -26,20 +26,24 @@ If an end-user has several datapacks that use different versions of a library, t
 
 Library | Author | Description | Versioned | Note
 --------|--------|-------------|-----------|-----
-[AESTD](https://github.com/Aeldrion/AESTD) | Aeldrion | A 'common library' of useful entity tags, block tags, item tags, entity tags, predicates, and other useful stuff | No |
+[AESTD](https://github.com/Aeldrion/AESTD) | Aeldrion | "Aeldrion's standard command library" - A common library of useful entity tags, block tags, item tags, entity tags, predicates, and other useful stuff | No |
 [Block Utils](https://github.com/ICY105/BlockUtils) | ICY105 | Adds various utilities for interacting with blocks. Currently limited to detecting redstone power. | Yes |
 [ChunkScan](https://github.com/ICY105/ChunkScan) | ICY105 | Adds a post-gen chunk scaning system. Supports any dimension (including custom), custom worldheights, and is compatible with other worldgen systems, both normal and postgen. | Yes |
 [ChunkScan.Ores](https://github.com/ICY105/ChunkScan.Ores) | ICY105 | Adds a custom ore generation system built on ChunkScan. Supports any dimension (including custom) and biome filtering. | Yes | Requires ChunkScan
+[Custom Shields](https://github.com/gibbsly/custom-shields) | gibbsly | Implements a system for adding custom shields with attributes to the game. | No |
 [Datapack Energy](https://github.com/ICY105/DatapackEnergy) | ICY105 | Adds a robust and optimized energy transfer system for Tech datapacks adding machines. | Yes |
+[EHID](https://github.com/gibbsly/ehid) | gibbsly | "Entity id & hit detection" - a system for determing when an entity is attack and what attacked it, including from projectiles. | No | 
+[Floating-Point Artithmetic](https://github.com/gibbsly/mc-floating-point-arithmetic) | gibbsly | A library for performing math operations in different number bases, including floating-point. | No | 
 [Get Shape Util](https://github.com/asd988/getshape_util) | asd988 | Provides a system for getting the shape of most blocks. | No |
 [Iris](https://github.com/Aeldrion/Iris) | Aeldrion | An extremely precise system for determing what block a player is looking at. | No |
 [Lantern Load](https://github.com/LanternMC/load) | LanternMC | A common system for controlling load order. This is the basis of most libraries, and all versioned libraries. | Static | Usually you do not need to add this explicitly, any datapack depending on LanternLoad will implement it themselves.
+[LIEE](https://github.com/gibbsly/liee) | gibbsly | "Low impact equipment effect utility" - an efficient system for detecting items using attributes instead of NBT checks | No |
 [Loottable Autosmelt](https://github.com/ICY105/LoottableAutosmelt) | ICY105 | Adds loot-table based tool abilities like autosmelt and void. | No | Extensive loot table modifications can cause incompatibilies between libraries.
-[LTOS](https://github.com/gibbsly/ltos) | gibbsly | A utility to reliably determine who broke a block and what was broken. | No | Extensive loot table modifications can cause incompatibilies between libraries.
+[LTOS](https://github.com/gibbsly/ltos) | gibbsly | "loot table output specification" - A utility to reliably determine who broke a block and what was broken. | No | Extensive loot table modifications can cause incompatibilies between libraries.
 [NBT Crafting API](https://github.com/BigPapi13/NBT-Crafting-API) | BigPapi13 | Implements a system to access the NBT of items in the vanilla crafting table. Only works on unstackable items, and cannot affect output. | No |
 [Player Action](https://github.com/ICY105/PlayerAction) | ICY105 | Provides hooks for various player actions, including click detection. | Yes |
 [Player DB](https://github.com/rx-modules/PlayerDB) | rx | Implements an efficient system for storing and retrieving per-player data in storage. | Yes |
-[QCB](https://github.com/Ellivers/QCB) | Ellivers | Adds a common cross-datapack soloution to remove barrel opening sounds from custom blocks without using /stopsound. | No |
+[QCB](https://github.com/Ellivers/QCB) | Ellivers | "Queit Custom Barrels" - Adds a common cross-datapack soloution to remove barrel opening sounds from custom blocks without using /stopsound. | No |
 [Random](https://github.com/Aeldrion/Minecraft-Random) | Aeldrion | Provides a variety of random number generators. | No |
 [Ray Collision Detector](https://github.com/K-bai/Minecraft-Ray-Collision-Detector) | K-bai | A precise ray-marching system to locate blocks. | No |
 [Score Based Damage](https://github.com/ErrorCraft/Score-Based-Damage) | ErrorCraft | Adds a system for damaging players using attributes | No |
