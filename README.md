@@ -38,6 +38,7 @@ Library | Author | Description | Versioned | Note
 [Iris](https://github.com/Aeldrion/Iris) | Aeldrion | An extremely precise system for determing what block a player is looking at. | 🔴 |
 [Lantern Load](https://github.com/LanternMC/load) | LanternMC | A common system for controlling load order. This is the basis of most libraries, and all versioned libraries. | Static | Usually you do not need to add this explicitly, any datapack depending on LanternLoad will implement it themselves.
 [LIEE](https://github.com/gibbsly/liee) | gibbsly | "Low impact equipment effect utility" - an efficient system for detecting items using attributes instead of NBT checks | 🔴 |
+[List DB](https://github.com/rx-modules/ListDB) | rx | Implements a storage based associative array, storing arbitrary NBT data assigned to a scoreboard value | 🔴 |
 [Loottable Autosmelt](https://github.com/ICY105/LoottableAutosmelt) | ICY105 | Adds loot-table based tool abilities like autosmelt and void. | 🔴 | Extensive loot table modifications can cause incompatibilies between libraries.
 [LTOS](https://github.com/gibbsly/ltos) | gibbsly | "loot table output specification" - A utility to reliably determine who broke a block and what was broken. | 🔴 | Extensive loot table modifications can cause incompatibilies between libraries.
 [NBT Crafting API](https://github.com/BigPapi13/NBT-Crafting-API) | BigPapi13 | Implements a system to access the NBT of items in the vanilla crafting table. Only works on unstackable items, and cannot affect output. | 🔴 |
