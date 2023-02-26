@@ -7,8 +7,9 @@ import zipfile
 import shutil
 from zipfile import ZipFile
 from urllib.request import urlretrieve
+from tempfile import TemporaryDirectory
 
-logging.basicConfig(level=logging.WARNING, stream=sys.stdout)
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger()
 
 file_name = 'dependencies.json'
@@ -27,29 +28,19 @@ Flags:
     -h --help:              prints this message
     -c --clean:             removes installed dependencies without re-installing them.
                             It's recommended to run this before removing a dependency.
-    -l --local:             skips grabbing step, building from anything left in the cache
     -t --no-tags:           skips appending function tags step
     -u --upgrade <version>: For use in versioned libraries. Finds & replaces version string
                             in dependencies.json with the provided string.
 """
 
-def get_dependencies(dependencies):
+def get_dependencies(dependencies, temp_dir):
     """
-    Copies dependency files into the .cache directory, downloading from a url
+    Copies dependency files into the directory, downloading from a url
     if needed and extracts zip files.
     :param dependencies: list of dependencies to install, from dependencies.json
     """
-    if os.path.isdir('.cache'):
-        logger.info(f'clearing .cache')
-        files = glob.glob('.cache/*.zip')
-        for f in files:
-            os.remove(f)
-    else:
-        logger.info(f'creating .cache')
-        os.mkdir('.cache')
-
     for dependency in dependencies:
-        dst_path = f'.cache/{dependency["name"]}'
+        dst_path = f'{temp_dir}/{dependency["name"]}'
         dst_zip = dst_path+'.zip'
 
         if 'local' in dependency:
@@ -57,7 +48,9 @@ def get_dependencies(dependencies):
             if os.path.isdir(src_path):
                 shutil.copytree(src_path, dst_path)
             elif zipfile.is_zipfile(src_path):
-                shutil.copyfile(src_path, dst_zip)
+                shutil.copyfile(src_path, dst_zip) 
+            else:
+                logger.warning("Unable to locate local file " + src_path)
         elif 'url' in dependency:
             url = dependency["url"]
             extensions = ['']
@@ -82,14 +75,14 @@ def get_dependencies(dependencies):
                 logger.info(f'extracting {dst_zip}')
                 f.extractall(dst_path)
 
-def find_dp_paths(dependencies):
+def find_dp_paths(dependencies, temp_dir):
     """
     Locates the '/data' folder for dependencies.
     :param dependencies: list of dependencies from dependencies.json
     """
     paths = []
     for dependency in dependencies:
-        path = f'.cache/{dependency["name"]}'
+        path = f'{temp_dir}/{dependency["name"]}'
         dp_path = path
         if 'path' in dependency and len(dependency['path']) > 0:
             dp_path = path + '/' + dependency['path']
@@ -224,6 +217,10 @@ def merge_tag_files(src, dst):
         with open(dst, 'r') as f_dst:
             src_contents = json.loads(f_src.read())
             dst_contents = json.loads(f_dst.read())
+
+            if 'values' not in dst_contents or 'values' not in src_contents:
+                return
+
             for entry in src_contents['values']:
                 if entry not in dst_contents['values']:
                     dst_contents['values'].append(entry)
@@ -246,12 +243,6 @@ def append_tag_file(path, value):
         merge = json.dumps(contents, indent=2)
     with open(path, 'w') as f_dst:
         f_dst.write(merge)
-    
-def get_optional(dict, entry):
-    if entry in dict:
-        return dict[entry]
-    else:
-        return None
 
 def copy_file(src, dst):
     try:
@@ -278,59 +269,59 @@ def main(path):
     if not os.path.isdir(dir_path):
         raise RuntimeError("Datapack does not have a '/data' directory")
 
-    dependencies = get_optional(dependencies_json, 'dependencies')
+    dependencies = dependencies_json.get('dependencies', None)
     if dependencies is None:
         raise ValueError('Missing dependencies field in dependencies.json')
 
-    namespaces = get_optional(dependencies_json, 'namespaces')
+    namespaces = dependencies_json.get('namespaces', None)
     if namespaces is None:
         namespaces = []
     elif isinstance(namespaces, str):
         namespaces = [namespaces]
 
-    version = get_optional(dependencies_json, 'version')
+    version = dependencies_json.get('version', None)
 
-    # Step 1: copy/download/extract dependencies to cache
-    if not has_tag('-l', '--local'):
+    with TemporaryDirectory() as temp_dir:
+        # Step 1: copy/download/extract dependencies
         print('Grabbing dependencies...')
-        get_dependencies(dependencies)
+        get_dependencies(dependencies, temp_dir)
 
-    # Step 2: find dependency datapack paths
-    dependency_paths = find_dp_paths(dependencies)
+        # Step 2: find dependency datapack paths
+        dependency_paths = find_dp_paths(dependencies, temp_dir)
 
-    # Step 3: clean existing dependencies
-    print('Cleaning dependencies...')
-    clean_dependencies(dependency_paths, dir_path, namespaces)
+        # Step 3: clean existing dependencies
+        print('Cleaning dependencies...')
+        clean_dependencies(dependency_paths, dir_path, namespaces)
 
-    # Step 4: upgrade version (if flag is used)
-    if has_tag('-u', '--upgrade'):
-        if version is None:
-            raise RuntimeError('Specify current version in dependencies.json to upgrade.')
-        try:
-            new_version = sys.argv[sys.argv.index('-u')+1]
-        except ValueError:
-            new_version = sys.argv[sys.argv.index('--upgrade')+1]
-        if version == new_version:
-            logger.warning('Current and target version match, skipping upgrade step.')
-        else:
-            print(f'Upgrading from {version} to {new_version}...')
-            update_version(dir_path, version, new_version, namespaces)
-            dependencies_json['version'] = new_version
-            for tag in dependencies_json['append_function_tags']:
-                tag['tag'] = tag['tag'].replace(version, new_version)
-                tag['value'] = tag['value'].replace(version, new_version)
-            with open(f'{path}/{file_name}', 'w') as f:
-                f.write(json.dumps(dependencies_json, indent=2))
+        # Step 4: upgrade version (if flag is used)
+        if has_tag('-u', '--upgrade'):
+            if version is None:
+                raise RuntimeError('Specify current version in dependencies.json to upgrade.')
+            try:
+                new_version = sys.argv[sys.argv.index('-u')+1]
+            except ValueError:
+                new_version = sys.argv[sys.argv.index('--upgrade')+1]
+            if version == new_version:
+                logger.warning('Current and target version match, skipping upgrade step.')
+            else:
+                print(f'Upgrading from {version} to {new_version}...')
+                update_version(dir_path, version, new_version, namespaces)
+                dependencies_json['version'] = new_version
+                for tag in dependencies_json['append_function_tags']:
+                    tag['tag'] = tag['tag'].replace(version, new_version)
+                    tag['value'] = tag['value'].replace(version, new_version)
+                with open(f'{path}/{file_name}', 'w') as f:
+                    f.write(json.dumps(dependencies_json, indent=2))
 
-    if not has_tag('-c', '--clean'):
-        # Step 5: install dependencies
-        print('Installing dependencies...')
-        install_dependencies(dependency_paths, dir_path, namespaces)
+        if not has_tag('-c', '--clean'):
+            # Step 5: install dependencies
+            print('Installing dependencies...')
+            install_dependencies(dependency_paths, dir_path, namespaces)
 
-        # Step 6: Append to function tags
-        if not has_tag('-t', '--no-tags'):
-            print('Appending function tags...')
-            append_tag_files(dir_path, get_optional(dependencies_json,'append_function_tags'))
+            # Step 6: Append to function tags
+            if not has_tag('-t', '--no-tags'):
+                print('Appending function tags...')
+                append_tag_files(dir_path, dependencies_json.get('append_function_tags', None))  
 
     print('Finished. Build successful.')
 
@@ -345,3 +336,4 @@ if __name__ == "__main__":
             main(path)
         except Exception as e:
             logger.error(e)
+            raise e
