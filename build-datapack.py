@@ -9,7 +9,7 @@ from zipfile import ZipFile
 from urllib.request import urlretrieve
 from tempfile import TemporaryDirectory
 
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+logging.basicConfig(level=logging.WARNING, stream=sys.stdout)
 logger = logging.getLogger()
 
 file_name = 'dependencies.json'
