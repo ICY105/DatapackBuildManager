@@ -34,6 +34,7 @@ Library | Author | Description | Versioned | Note
 [Datapack Energy](https://github.com/ICY105/DatapackEnergy) | ICY105 | Adds a robust and optimized energy transfer system for Tech datapacks adding machines. | ✅ |
 [EHID](https://github.com/gibbsly/ehid) | gibbsly | "Entity id & hit detection" - a system for determing when an entity is attack and what attacked it, including from projectiles. | 🔴 | 
 [Floating-Point Artithmetic](https://github.com/gibbsly/mc-floating-point-arithmetic) | gibbsly | A library for performing math operations in different number bases, including floating-point. | 🔴 | 
+[FluidCrafting](https://github.com/ICY105/FluidCrafting) | ICY105 | Add custom fluid mechanics, including storage and transporation. | ✅ | 
 [Get Shape Util](https://github.com/asd988/getshape_util) | asd988 | Provides a system for getting the shape of most blocks. | 🔴 |
 [Iris](https://github.com/Aeldrion/Iris) | Aeldrion | An extremely precise system for determing what block a player is looking at. | 🔴 |
 [Lantern Load](https://github.com/LanternMC/load) | LanternMC | A common system for controlling load order. This is the basis of most libraries, and all versioned libraries. | Static | Usually you do not need to add this explicitly, any datapack depending on LanternLoad will implement it themselves.
