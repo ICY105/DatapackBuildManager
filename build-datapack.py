@@ -263,7 +263,10 @@ def replace_file_contents(path, old_str, new_str):
 
 def main(path):
     with open(f'{path}/{file_name}', 'r') as f:
-        dependencies_json = json.loads(f.read())
+        try:
+            dependencies_json = json.loads(f.read())
+        except e:
+            raise RuntimeError('Invalid JSON file. Try using a JSON validator.') from e
         logger.debug(f'dependencies file: {dependencies_json}')
     dir_path = path + '/data'
     if not os.path.isdir(dir_path):
