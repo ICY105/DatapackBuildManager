@@ -49,6 +49,10 @@
       "value": "test_pack:generate"
     }
   ],
+  # Optional: Ignored files to avoid copying/modifying. Note: .git is added by default
+  "ignored_files": [
+    ".git"
+  ],
   # Optional: Current datapack version. When using --upgrade flag, this is the version that gets replaced.
   "version":"v1.0"
 }

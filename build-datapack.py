@@ -12,8 +12,9 @@ from tempfile import TemporaryDirectory
 logging.basicConfig(level=logging.WARNING, stream=sys.stdout)
 logger = logging.getLogger()
 
-file_name = 'dependencies.json'
-help_text="""
+FILE_NAME = 'dependencies.json'
+IGNORE_LIST = [FILE_NAME, '.git', '.github', '.gitignore']
+HELP_TEXT="""
 build-datapack.py will install dependencies into a datapack based on a provided
 dependencies.json file (see git repo for reference). This file goes in the
 same folder as your pack.mcmeta.
@@ -25,12 +26,14 @@ Path:
     Accepts top-level datapack path, or path to dependencies.json
 
 Flags:
-    -h --help:              prints this message
-    -c --clean:             removes installed dependencies without re-installing them.
+    -h --help               Prints this message.
+    -c --clean              Removes installed dependencies without re-installing them.
                             It's recommended to run this before removing a dependency.
-    -t --no-tags:           skips appending function tags step
-    -u --upgrade <version>: For use in versioned libraries. Finds & replaces version string
+    -t --no-tags            Skips appending function tags step.
+    -u --upgrade <version>  For use in versioned libraries. Finds & replaces version string
                             in dependencies.json with the provided string.
+    -o --output <dir>       Outputs build to specified directory instead of building
+                            in-place. Prevents modifying any source code.
 """
 
 def get_dependencies(dependencies, temp_dir):
@@ -46,9 +49,9 @@ def get_dependencies(dependencies, temp_dir):
         if 'local' in dependency:
             src_path = dependency['local']
             if os.path.isdir(src_path):
-                shutil.copytree(src_path, dst_path)
+                shutil.copytree(src_path, dst_path, ignore=shutil.ignore_patterns(*IGNORE_LIST))
             elif zipfile.is_zipfile(src_path):
-                shutil.copyfile(src_path, dst_zip) 
+                shutil.copyfile(src_path, dst_zip)
             else:
                 logger.warning("Unable to locate local file " + src_path)
         elif 'url' in dependency:
@@ -164,6 +167,7 @@ def update_version(dp_path, old_ver, new_ver, namespaces):
                 replace_file_contents(new_path, old_ver, new_ver)
 
 def install_dependencies(dp_paths, install_path, namespaces):
+
     """
     Installs dependencies by copying files and merging where pratical
     :param dp_paths: list of paths to copy from
@@ -180,7 +184,7 @@ def install_dependencies(dp_paths, install_path, namespaces):
                 dst_path = f'{install_path}/{dir}/{f}'
 
                 if os.path.isfile(dst_path):
-                    if dir in namespaces and src_path not in cleaned_files:
+                    if dir in namespaces and src_path not in cleaned_files and not has_tag('-o', '-output'):
                         logging.info(f'Cleaning file {dst_path}')
                         os.remove(dst_path)
                         copy_file(src_path, dst_path)
@@ -254,6 +258,18 @@ def copy_file(src, dst):
 def has_tag(short, long):
     return short in sys.argv or long in sys.argv
 
+def get_tag_value(short, long):
+    index = -1
+    if short in sys.argv:
+        index = sys.argv.index(short) + 1
+    elif long in sys.argv:
+        index = sys.argv.index(long) + 1
+    
+    if index == -1 or index >= len(sys.argv) or sys.argv[index].startswith('-'):
+        raise RuntimeError(f'Modifer {short} {long} requires an additional value, ie. ''python build-datapack.py {short} <data>''')
+    else:
+        return sys.argv[index]
+
 def replace_file_contents(path, old_str, new_str):
     with open(path, 'r') as f:
         contents = f.read()
@@ -262,29 +278,51 @@ def replace_file_contents(path, old_str, new_str):
         f.write(contents)
 
 def main(path):
-    with open(f'{path}/{file_name}', 'r') as f:
+    # open dependencies.json
+    with open(f'{path}/{FILE_NAME}', 'r') as f:
         try:
             dependencies_json = json.loads(f.read())
         except e:
             raise RuntimeError('Invalid JSON file. Try using a JSON validator.') from e
         logger.debug(f'dependencies file: {dependencies_json}')
+
+    # verify /data directory exists
     dir_path = path + '/data'
     if not os.path.isdir(dir_path):
         raise RuntimeError("Datapack does not have a '/data' directory")
 
+    # get list of dependencies
     dependencies = dependencies_json.get('dependencies', None)
     if dependencies is None:
         raise ValueError('Missing dependencies field in dependencies.json')
 
+    # get list of protected namespaces
     namespaces = dependencies_json.get('namespaces', None)
     if namespaces is None:
         namespaces = []
     elif isinstance(namespaces, str):
         namespaces = [namespaces]
 
+    # get version
     version = dependencies_json.get('version', None)
 
+    # add ignored files
+    ignored_files = dependencies_json.get('ignored_files', None)
+    if type(ignored_files) is list:
+        IGNORE_LIST.extend(ignored_files)
+
     with TemporaryDirectory() as temp_dir:
+        # Step 0: copy datapack to temp if output flag is enabled
+        path_truncated = path
+        if '/' in path_truncated:
+            path_truncated = path_truncated[path_truncated.rfind('/')+1:]
+        if has_tag('-o', '-output'):
+            print('Copying datapack files...')
+            if has_tag('-c', '--clean'):
+                raise RuntimeError('-o --output and -c --clean are exclusionary, pick one and run again.')
+            shutil.copytree(path, f'{temp_dir}/{path_truncated}', ignore=shutil.ignore_patterns(*IGNORE_LIST))
+            dir_path = f'{temp_dir}/{path_truncated}/data'
+
         # Step 1: copy/download/extract dependencies
         print('Grabbing dependencies...')
         get_dependencies(dependencies, temp_dir)
@@ -293,17 +331,15 @@ def main(path):
         dependency_paths = find_dp_paths(dependencies, temp_dir)
 
         # Step 3: clean existing dependencies
-        print('Cleaning dependencies...')
-        clean_dependencies(dependency_paths, dir_path, namespaces)
+        if not has_tag('-o', '--output'):
+            print('Cleaning dependencies...')
+            clean_dependencies(dependency_paths, dir_path, namespaces)
 
         # Step 4: upgrade version (if flag is used)
         if has_tag('-u', '--upgrade'):
             if version is None:
                 raise RuntimeError('Specify current version in dependencies.json to upgrade.')
-            try:
-                new_version = sys.argv[sys.argv.index('-u')+1]
-            except ValueError:
-                new_version = sys.argv[sys.argv.index('--upgrade')+1]
+            new_version = get_tag_value('-u', '--upgrade')
             if version == new_version:
                 logger.warning('Current and target version match, skipping upgrade step.')
             else:
@@ -313,7 +349,7 @@ def main(path):
                 for tag in dependencies_json['append_function_tags']:
                     tag['tag'] = tag['tag'].replace(version, new_version)
                     tag['value'] = tag['value'].replace(version, new_version)
-                with open(f'{path}/{file_name}', 'w') as f:
+                with open(f'{path}/{FILE_NAME}', 'w') as f:
                     f.write(json.dumps(dependencies_json, indent=2))
 
         if not has_tag('-c', '--clean'):
@@ -324,17 +360,26 @@ def main(path):
             # Step 6: Append to function tags
             if not has_tag('-t', '--no-tags'):
                 print('Appending function tags...')
-                append_tag_files(dir_path, dependencies_json.get('append_function_tags', None))  
+                append_tag_files(dir_path, dependencies_json.get('append_function_tags', None))
+
+            # Step 7: Copy output if -o --ouput is used
+            if has_tag('-o', '-output'):
+                output_dir = get_tag_value('-o', '--output')
+                if not os.path.isdir(output_dir):
+                    raise RuntimeError("Directory specified for -o --ouput does not exist.")
+                print('Zipping datapack...')
+                os.chdir(output_dir)
+                shutil.make_archive(path_truncated, 'zip', f'{temp_dir}/{path_truncated}')
 
     print('Finished. Build successful.')
 
 if __name__ == "__main__":
     if has_tag('-h', '--help') or len(sys.argv) == 1:
-        print(help_text)
+        print(HELP_TEXT)
     else:
         path = sys.argv[1]
-        if path.endswith(file_name):
-            path = path[:-len(file_name)]
+        if path.endswith(FILE_NAME):
+            path = path[:-len(FILE_NAME)]
         try:
             main(path)
         except Exception as e:
