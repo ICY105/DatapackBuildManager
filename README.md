@@ -17,6 +17,10 @@ Run this from command line for basic operation:
 
 For advanced operation, add -h to see flags:
     python build-datapack.py -h
+
+As of v1.2, it is recommended to use the new -o flag.
+This will build your datapack into a new file, instead of modifying it directly.
+    python build-datapack.py <datapack directory> -o <output directory>
 ```
 
 # Known Libraries
