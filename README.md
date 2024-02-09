@@ -1,7 +1,7 @@
 # DatapackBuildManager
 A simple build system for managing dependencies of Minecraft Datapacks written in Python, sort of like a make file for datapacks. It currently automates:
 * Downloading dependencies from a URL (local files are also supported)
-* Cleaning datapack of dangleing files
+* Cleaning datapack of dangling files
 * Copying dependencies into datapack, merging files where pratical
 * Integrating function tags
 * Upgrading versioned libraries build version (doesn't cover all edge cases, you will need to check what does and does not get updated)
